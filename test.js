@@ -29,6 +29,7 @@ console.log(canvas.style);
 
 var context = canvas.getContext("2d");
 
+var NUMBER_OF_APPLES = 8;
 var BOARD_SPACE_SIZE = 32;
 
 var BOARD_SPACE_EMPTY = 0;
@@ -40,6 +41,57 @@ Board.width =  Math.floor(canvas.width / BOARD_SPACE_SIZE);
 Board.height = Math.floor(canvas.height / BOARD_SPACE_SIZE);
 Board.spaces = new Array();
 
+var WORM_DIR_UP = 1;
+var WORM_DIR_DOWN = 2;
+var WORM_DIR_LEFT = 3;
+var WORM_DIR_RIGHT = 4;
+
+var Worm = { };
+Worm.headX = Board.width / 2;
+Worm.headY = Board.height / 2;
+Worm.speed = 1.0 / 10.0;
+Worm.length = 5;
+Worm.direction = WORM_DIR_LEFT;
+Worm.timeAccumulator = 0.0;
+
+Worm.update = function(deltaTime) {
+	Worm.timeAccumulator += deltaTime;
+
+	while (Worm.timeAccumulator >= Worm.speed) {
+		Worm.advance();
+		Worm.timeAccumulator -= Worm.speed;
+	}
+}
+
+Worm.advance = function() {
+	if (Worm.direction == WORM_DIR_LEFT) {
+		Worm.headX--;
+		if (Worm.headX < 0) {
+			Worm.headX = 0;
+		}
+	}
+	else if (Worm.direction == WORM_DIR_RIGHT) {
+		Worm.headX++;
+		if (Worm.headX >= Board.width) {
+			Worm.headX = Board.width - 1;
+		}
+	}
+	else if (Worm.direction == WORM_DIR_UP) {
+		Worm.headY--;
+		if (Worm.headY < 0) {
+			Worm.headY = 0;
+		}
+	}
+	else if (Worm.direction == WORM_DIR_DOWN) {
+		Worm.headY++;
+		if (Worm.headY >= Board.height) {
+			Worm.headY = Board.height - 1;
+		}
+	}
+
+	Board.setSpace(Worm.headX, Worm.headY, BOARD_SPACE_WORM);
+}
+
 Board.setSpace = function(x, y, newValue) {
 	Board.spaces[x + y * Board.width] = newValue;
 }
@@ -49,20 +101,20 @@ Board.getSpace = function(x, y) {
 }
 
 Board.initialize = function() {
+	//set all spaces to empty!
 	for (var x = 0; x < Board.width; x++) {
 		for (var y = 0; y < Board.height; y++) {
 			Board.setSpace(x, y, BOARD_SPACE_EMPTY);
 		}
 	}
 
-	Board.placeApple();
+	//set the initial worm head space
+	Board.setSpace(Worm.headX, Worm.headY, BOARD_SPACE_WORM);
 
-	// Board.setSpace(3, 5, BOARD_SPACE_APPLE);
-	// Board.setSpace(0, 0, BOARD_SPACE_WORM);
-	// Board.setSpace(1, 2, BOARD_SPACE_WORM);
-	// Board.setSpace(13, 15, BOARD_SPACE_WORM);
-	// Board.setSpace(13, 16, BOARD_SPACE_WORM);
-	// Board.setSpace(13, 17, BOARD_SPACE_WORM);
+	//place the initial apples
+	for (var i = 0; i < NUMBER_OF_APPLES; i++) {
+		Board.placeApple();
+	}
 }
 
 Board.placeApple = function() {
@@ -79,7 +131,7 @@ Board.placeApple = function() {
 
 	//choose a random empty space
 	var space = Math.floor(Math.random() * numberOfEmptySpaces);
-	
+
 	var currentSpace = 0;
 	for (var x = 0; x < Board.width; x++) {
 		for (var y = 0; y < Board.height; y++) {
@@ -117,12 +169,6 @@ Board.dump = function() {
 
 Board.initialize();
 // Board.dump();
-
-var Worm = { };
-Worm.velocity = 1250;
-Worm.size = 24;
-Worm.positionX = documentWidth / 2;
-Worm.positionY = documentHeight / 2;
 
 //keyboard controls
 var keysDown = {};
@@ -202,23 +248,23 @@ Game.update = function() {
 	var deltaTime = 1 / Game.fps;
 	
 	if (38 in keysDown || 87 in keysDown) { // Player holding up
-		Worm.positionY -= Worm.velocity * deltaTime;
+		Worm.direction = WORM_DIR_UP;
+		console.log("1");
 	}
 	if (40 in keysDown || 83 in keysDown) { // Player holding down
-		Worm.positionY += Worm.velocity * deltaTime;
+		Worm.direction = WORM_DIR_DOWN;
+		console.log("2");
 	}
 	if (37 in keysDown || 65 in keysDown) { // Player holding left
-		Worm.positionX -= Worm.velocity * deltaTime;
+		Worm.direction = WORM_DIR_LEFT;
+		console.log("3");
 	}
 	if (39 in keysDown || 68 in keysDown) { // Player holding right
-		Worm.positionX += Worm.velocity * deltaTime;
+		Worm.direction = WORM_DIR_RIGHT;
+		console.log("4");
 	}
-	
-	//don't let the thing go off the board
-	Worm.positionX = Math.max(Worm.positionX, Worm.size / 2);
-	Worm.positionX = Math.min(Worm.positionX, gameWidth - Worm.size / 2);
-	Worm.positionY = Math.max(Worm.positionY, Worm.size / 2);
-	Worm.positionY = Math.min(Worm.positionY, gameHeight - Worm.size / 2);
+
+	Worm.update(deltaTime);
 };
 
 //start the loop!
