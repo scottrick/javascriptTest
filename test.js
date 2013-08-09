@@ -16,8 +16,8 @@ if (documentHeight === undefined) {
 var gameWidth = documentWidth - canvasInset * 2;
 var gameHeight = documentHeight - canvasInset * 2;
 
-console.log("screen " + screen.width + ", " + screen.height);
-console.log("window " + window.innerWidth + ", " + window.innerHeight);
+// console.log("screen " + screen.width + ", " + screen.height);
+// console.log("window " + window.innerWidth + ", " + window.innerHeight);
 
 var canvas = document.createElement("canvas");
 canvas.style.border = "none";
@@ -25,7 +25,7 @@ canvas.width = gameWidth;
 canvas.height = gameHeight;
 document.body.appendChild(canvas);
 
-console.log(canvas.style);
+// console.log(canvas.style);
 
 var context = canvas.getContext("2d");
 
@@ -53,6 +53,7 @@ Worm.alive = true;
 Worm.speed = 1.0 / 10.0;
 Worm.length = 5;
 Worm.direction = WORM_DIR_LEFT;
+Worm.nextDirection = Worm.direction;
 Worm.timeAccumulator = 0.0;
 
 Worm.body = new Array();
@@ -72,6 +73,7 @@ Worm.update = function(deltaTime) {
 	Worm.timeAccumulator += deltaTime;
 
 	while (Worm.timeAccumulator >= Worm.speed) {
+		Worm.direction = Worm.nextDirection;
 		Worm.advance();
 		Worm.timeAccumulator -= Worm.speed;
 	}
@@ -98,8 +100,6 @@ Worm.advance = function() {
 	}
 
 	//check collision stuff here!
-	console.log("" + newHead.x + ", " + newHead.y);;
-
 	//first make sure the user didn't collidge with the board walls
 	if (newHead.x < 0 || newHead.y < 0 || newHead.x >= Board.width || newHead.y >= Board.height) {
 		//ran into the wall!
@@ -218,7 +218,6 @@ Board.dump = function() {
 
 Worm.initialize();
 Board.initialize();
-// Board.dump();
 
 //keyboard controls
 var keysDown = {};
@@ -306,20 +305,28 @@ Game.update = function() {
 	var deltaTime = 1 / Game.fps;
 	
 	if (38 in keysDown || 87 in keysDown) { // Player holding up
-		Worm.direction = WORM_DIR_UP;
-		console.log("1");
+		if (Worm.direction != WORM_DIR_DOWN) {
+			//can't instantly go backwards
+			Worm.nextDirection = WORM_DIR_UP;
+		}
 	}
 	if (40 in keysDown || 83 in keysDown) { // Player holding down
-		Worm.direction = WORM_DIR_DOWN;
-		console.log("2");
+		if (Worm.direction != WORM_DIR_UP) {
+			//can't instantly go backwards
+			Worm.nextDirection = WORM_DIR_DOWN;
+		}
 	}
 	if (37 in keysDown || 65 in keysDown) { // Player holding left
-		Worm.direction = WORM_DIR_LEFT;
-		console.log("3");
+		if (Worm.direction != WORM_DIR_RIGHT) {
+			//can't instantly go backwards
+			Worm.nextDirection = WORM_DIR_LEFT;
+		}
 	}
 	if (39 in keysDown || 68 in keysDown) { // Player holding right
-		Worm.direction = WORM_DIR_RIGHT;
-		console.log("4");
+		if (Worm.direction != WORM_DIR_LEFT) {
+			//can't instantly go backwards
+			Worm.nextDirection = WORM_DIR_RIGHT;
+		}
 	}
 
 	Worm.update(deltaTime);
