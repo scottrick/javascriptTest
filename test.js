@@ -35,6 +35,8 @@ var BOARD_SPACE_SIZE = 32;
 var BOARD_SPACE_EMPTY = 0;
 var BOARD_SPACE_WORM = 1;
 var BOARD_SPACE_APPLE = 2;
+var BOARD_SPACE_WORM_DEATH = 3;
+var BOARD_SPACE_WORM_WALL_DEATH = 4;
 
 var Board = { };
 Board.width =  Math.floor(canvas.width / BOARD_SPACE_SIZE);
@@ -47,14 +49,26 @@ var WORM_DIR_LEFT = 3;
 var WORM_DIR_RIGHT = 4;
 
 var Worm = { };
-Worm.headX = Board.width / 2;
-Worm.headY = Board.height / 2;
+Worm.alive = true;
 Worm.speed = 1.0 / 10.0;
 Worm.length = 5;
 Worm.direction = WORM_DIR_LEFT;
 Worm.timeAccumulator = 0.0;
 
+Worm.body = new Array();
+
+Worm.initialize = function() {
+	var head = { };
+	head.x = Board.width / 2;
+	head.y = Board.height / 2;
+	Worm.body.push(head);
+}
+
 Worm.update = function(deltaTime) {
+	if (!this.alive) {
+		return;
+	}
+
 	Worm.timeAccumulator += deltaTime;
 
 	while (Worm.timeAccumulator >= Worm.speed) {
@@ -64,32 +78,67 @@ Worm.update = function(deltaTime) {
 }
 
 Worm.advance = function() {
+	var head = Worm.body[0];
+	var newHead = { };
+
+	newHead.x = head.x;
+	newHead.y = head.y;
+
 	if (Worm.direction == WORM_DIR_LEFT) {
-		Worm.headX--;
-		if (Worm.headX < 0) {
-			Worm.headX = 0;
-		}
+		newHead.x--;
 	}
 	else if (Worm.direction == WORM_DIR_RIGHT) {
-		Worm.headX++;
-		if (Worm.headX >= Board.width) {
-			Worm.headX = Board.width - 1;
-		}
+		newHead.x++;
 	}
 	else if (Worm.direction == WORM_DIR_UP) {
-		Worm.headY--;
-		if (Worm.headY < 0) {
-			Worm.headY = 0;
-		}
+		newHead.y--;
 	}
 	else if (Worm.direction == WORM_DIR_DOWN) {
-		Worm.headY++;
-		if (Worm.headY >= Board.height) {
-			Worm.headY = Board.height - 1;
-		}
+		newHead.y++;
 	}
 
-	Board.setSpace(Worm.headX, Worm.headY, BOARD_SPACE_WORM);
+	//check collision stuff here!
+	console.log("" + newHead.x + ", " + newHead.y);;
+
+	//first make sure the user didn't collidge with the board walls
+	if (newHead.x < 0 || newHead.y < 0 || newHead.x >= Board.width || newHead.y >= Board.height) {
+		//ran into the wall!
+		Worm.alive = false;
+		Board.setSpace(head.x, head.y, BOARD_SPACE_WORM_WALL_DEATH);
+	}
+	else 
+	{
+		//check collision against board contents!
+		var space = Board.getSpace(newHead.x, newHead.y);
+
+		if (space == BOARD_SPACE_EMPTY) {
+			//didn't run into anything!
+			Board.setSpace(newHead.x, newHead.y, BOARD_SPACE_WORM);
+		}
+		else if (space == BOARD_SPACE_WORM || space == BOARD_SPACE_WORM_DEATH) {
+			//ran into the worm!
+			Worm.alive = false;
+			Board.setSpace(newHead.x, newHead.y, BOARD_SPACE_WORM_DEATH);
+		}
+		else if (space == BOARD_SPACE_APPLE) {
+			Worm.grow();
+			Board.placeApple();
+			Board.setSpace(newHead.x, newHead.y, BOARD_SPACE_WORM);
+		}
+
+		Worm.body.splice(0, 0, newHead);
+	}
+
+	if (Worm.alive) {
+		while (Worm.body.length > Worm.length) {
+			var tail = Worm.body.pop();
+			Board.setSpace(tail.x, tail.y, BOARD_SPACE_EMPTY);
+		}
+	}
+}
+
+Worm.grow = function() {
+	Worm.length += 3;
 }
 
 Board.setSpace = function(x, y, newValue) {
@@ -167,6 +216,7 @@ Board.dump = function() {
 	}
 }
 
+Worm.initialize();
 Board.initialize();
 // Board.dump();
 
@@ -237,6 +287,14 @@ Game.draw = function() {
 				}
 				else if (spaceContents == BOARD_SPACE_WORM) {
 					context.fillStyle = "#0B0";
+					context.fillRect(xInset + x * BOARD_SPACE_SIZE, yInset + y * BOARD_SPACE_SIZE, BOARD_SPACE_SIZE, BOARD_SPACE_SIZE);
+				}
+				else if (spaceContents == BOARD_SPACE_WORM_DEATH) {
+					context.fillStyle = "#BB0";
+					context.fillRect(xInset + x * BOARD_SPACE_SIZE, yInset + y * BOARD_SPACE_SIZE, BOARD_SPACE_SIZE, BOARD_SPACE_SIZE);
+				}
+				else if (spaceContents == BOARD_SPACE_WORM_WALL_DEATH) {
+					context.fillStyle = "#B0B";
 					context.fillRect(xInset + x * BOARD_SPACE_SIZE, yInset + y * BOARD_SPACE_SIZE, BOARD_SPACE_SIZE, BOARD_SPACE_SIZE);
 				}
 			}
