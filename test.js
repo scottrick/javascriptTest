@@ -105,6 +105,9 @@ Worm.advance = function() {
 		//ran into the wall!
 		Worm.alive = false;
 		Board.setSpace(head.x, head.y, BOARD_SPACE_WORM_WALL_DEATH);
+
+		var snd = new Audio("scream.wav"); // buffers automatically when created
+		snd.play();
 	}
 	else 
 	{
