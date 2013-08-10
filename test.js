@@ -72,6 +72,14 @@ Worm.initialize = function() {
 	Worm.body.push(head);
 }
 
+Worm.die = function() {
+	Worm.alive = false;
+
+	//play a funny sound
+	var snd = new Audio("scream.wav"); 
+	snd.play();
+}
+
 Worm.update = function(deltaTime) {
 	if (!this.alive) {
 		return;
@@ -110,11 +118,8 @@ Worm.advance = function() {
 	//first make sure the user didn't collidge with the board walls
 	if (newHead.x < 0 || newHead.y < 0 || newHead.x >= Board.width || newHead.y >= Board.height) {
 		//ran into the wall!
-		Worm.alive = false;
 		Board.setSpace(head.x, head.y, BOARD_SPACE_WORM_WALL_DEATH);
-
-		var snd = new Audio("scream.wav"); // buffers automatically when created
-		snd.play();
+		Worm.die();
 	}
 	else 
 	{
@@ -127,8 +132,8 @@ Worm.advance = function() {
 		}
 		else if (space == BOARD_SPACE_WORM || space == BOARD_SPACE_WORM_DEATH) {
 			//ran into the worm!
-			Worm.alive = false;
 			Board.setSpace(newHead.x, newHead.y, BOARD_SPACE_WORM_DEATH);
+			Worm.die();
 		}
 		else if (space == BOARD_SPACE_APPLE) {
 			Worm.grow();
