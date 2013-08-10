@@ -29,8 +29,8 @@ document.body.appendChild(canvas);
 
 var context = canvas.getContext("2d");
 
-var NUMBER_OF_APPLES = 8;
-var BOARD_SPACE_SIZE = 32;
+var NUMBER_OF_APPLES = 32;
+var BOARD_SPACE_SIZE = 16;
 
 var BOARD_SPACE_EMPTY = 0;
 var BOARD_SPACE_WORM = 1;
@@ -50,7 +50,7 @@ var WORM_DIR_RIGHT = 4;
 
 var Worm = { };
 Worm.alive = true;
-Worm.speed = 1.0 / 10.0;
+Worm.speed = 1.0 / 25.0;
 Worm.length = 5;
 Worm.direction = WORM_DIR_LEFT;
 Worm.nextDirection = Worm.direction;
@@ -60,8 +60,8 @@ Worm.body = new Array();
 
 Worm.initialize = function() {
 	var head = { };
-	head.x = Board.width / 2;
-	head.y = Board.height / 2;
+	head.x = Math.floor(Board.width / 2);
+	head.y = Math.floor(Board.height / 2);
 	Worm.body.push(head);
 }
 
@@ -141,7 +141,7 @@ Worm.advance = function() {
 }
 
 Worm.grow = function() {
-	Worm.length += 3;
+	Worm.length += 4;
 }
 
 Board.setSpace = function(x, y, newValue) {
