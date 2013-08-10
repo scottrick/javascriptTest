@@ -49,13 +49,6 @@ var WORM_DIR_LEFT = 3;
 var WORM_DIR_RIGHT = 4;
 
 var Worm = { };
-Worm.alive = true;
-Worm.speed = 1.0 / 25.0;
-Worm.length = 5;
-Worm.direction = WORM_DIR_LEFT;
-Worm.nextDirection = Worm.direction;
-Worm.timeAccumulator = 0.0;
-Worm.body = new Array();
 
 Worm.initialize = function() {
 	Worm.alive = true;
@@ -64,6 +57,7 @@ Worm.initialize = function() {
 	Worm.direction = WORM_DIR_LEFT;
 	Worm.nextDirection = Worm.direction;
 	Worm.timeAccumulator = 0.0;
+	Worm.numberOfApplesEaten = 0;
 	Worm.body = new Array();
 
 	var head = { };
@@ -154,6 +148,7 @@ Worm.advance = function() {
 
 Worm.grow = function() {
 	Worm.length += 4;
+	Worm.numberOfApplesEaten++;
 }
 
 Board.setSpace = function(x, y, newValue) {
@@ -239,7 +234,6 @@ var keysDown = {};
 
 addEventListener("keydown", function (e) {
 		keysDown[e.keyCode] = true;
-		console.log(e.keyCode);
 }, false);
 
 addEventListener("keyup", function (e) {
@@ -253,12 +247,6 @@ Game.paused = false;
 
 Game.togglePause = function() {
 	Game.paused = !Game.paused;
-	// if (Game.paused) {
-	// 	Game.paused = false;
-	// }
-	// else {
-	// 	Game.paused = true;
-	// }
 }
 
 Game.run = (function() {
@@ -326,19 +314,49 @@ Game.draw = function() {
 			}
 		}
 	}
+
+	context.textAlign = "center";
+	context.fillStyle = "#ccc";
+
+	if (!Worm.alive) {
+		context.font = "200px Arial";
+		context.fillText("Game Over", gameWidth / 2, gameHeight / 2);
+		context.font = "88px Arial";
+
+		if (Worm.numberOfApplesEaten == 0) {
+			context.font = "60px Arial";
+			context.fillText("You didn't eat any apples, you silly goose!", gameWidth / 2, gameHeight / 2 + 110);
+		}
+		else if (Worm.numberOfApplesEaten == 1) {
+			context.fillText("You ate 1 apple.", gameWidth / 2, gameHeight / 2 + 110);
+		}
+		else {
+			context.fillText("You ate " + Worm.numberOfApplesEaten + " apples.", gameWidth / 2, gameHeight / 2 + 100);
+		}
+
+		context.font = "40px Arial";
+		context.fillText("Press spacebar to restart.", gameWidth / 2, gameHeight / 2 + 200);
+	}
+
+	if (Game.paused) {
+		context.font = "240px Arial";
+		context.fillText("PAUSED", gameWidth / 2, gameHeight / 2);
+	}
 };
 
 Game.update = function() { 
 	if (32 in keysDown) { // Player holding SPACE BAR
 		if (Worm.alive) {
-			//pause/unpause
-			// Game.togglePause();
+			// pause/unpause
+			Game.togglePause();
 		}
 		else {
 			//restart!
 			Worm.initialize();
 			Board.initialize();
 		}
+
+		delete keysDown[32];
 	}
 
 	if (Game.paused) {
