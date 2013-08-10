@@ -55,10 +55,17 @@ Worm.length = 5;
 Worm.direction = WORM_DIR_LEFT;
 Worm.nextDirection = Worm.direction;
 Worm.timeAccumulator = 0.0;
-
 Worm.body = new Array();
 
 Worm.initialize = function() {
+	Worm.alive = true;
+	Worm.speed = 1.0 / 25.0;
+	Worm.length = 5;
+	Worm.direction = WORM_DIR_LEFT;
+	Worm.nextDirection = Worm.direction;
+	Worm.timeAccumulator = 0.0;
+	Worm.body = new Array();
+
 	var head = { };
 	head.x = Math.floor(Board.width / 2);
 	head.y = Math.floor(Board.height / 2);
@@ -227,6 +234,7 @@ var keysDown = {};
 
 addEventListener("keydown", function (e) {
 		keysDown[e.keyCode] = true;
+		console.log(e.keyCode);
 }, false);
 
 addEventListener("keyup", function (e) {
@@ -236,6 +244,17 @@ addEventListener("keyup", function (e) {
 var Game = { };
 
 Game.fps = 60;
+Game.paused = false;
+
+Game.togglePause = function() {
+	Game.paused = !Game.paused;
+	// if (Game.paused) {
+	// 	Game.paused = false;
+	// }
+	// else {
+	// 	Game.paused = true;
+	// }
+}
 
 Game.run = (function() {
 		var loops = 0, skipTicks = 1000 / Game.fps,
@@ -305,8 +324,24 @@ Game.draw = function() {
 };
 
 Game.update = function() { 
+	if (32 in keysDown) { // Player holding SPACE BAR
+		if (Worm.alive) {
+			//pause/unpause
+			// Game.togglePause();
+		}
+		else {
+			//restart!
+			Worm.initialize();
+			Board.initialize();
+		}
+	}
+
+	if (Game.paused) {
+		return;
+	}
+
 	var deltaTime = 1 / Game.fps;
-	
+
 	if (38 in keysDown || 87 in keysDown) { // Player holding up
 		if (Worm.direction != WORM_DIR_DOWN) {
 			//can't instantly go backwards
