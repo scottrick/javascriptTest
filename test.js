@@ -11,7 +11,7 @@ if (documentWidth === undefined) {
 }
 if (documentHeight === undefined) {
 	documentHeight = 768;
-}
+}	
 
 var gameWidth = documentWidth - canvasInset * 2;
 var gameHeight = documentHeight - canvasInset * 2;
@@ -29,7 +29,9 @@ document.body.appendChild(canvas);
 
 var context = canvas.getContext("2d");
 
-var NUMBER_OF_APPLES = 32;
+var PAUSED = false;
+
+var APPLE_MULTIPLIER = 2;
 var BOARD_SPACE_SIZE = 16;
 
 var BOARD_SPACE_EMPTY = 0;
@@ -58,6 +60,7 @@ Worm.initialize = function() {
 	Worm.nextDirection = Worm.direction;
 	Worm.timeAccumulator = 0.0;
 	Worm.numberOfApplesEaten = 0;
+	Worm.score = 0;
 	Worm.body = new Array();
 
 	var head = { };
@@ -69,9 +72,9 @@ Worm.initialize = function() {
 Worm.die = function() {
 	Worm.alive = false;
 
-	//play a funny sound
-	var snd = new Audio("scream.wav"); 
-	snd.play();
+	// //play a funny sound
+	// var snd = new Audio("scream.wav"); 
+	// snd.play();
 }
 
 Worm.update = function(deltaTime) {
@@ -131,7 +134,15 @@ Worm.advance = function() {
 		}
 		else if (space == BOARD_SPACE_APPLE) {
 			Worm.grow();
-			Board.placeApple();
+
+			Worm.numberOfApplesEaten++;
+			Worm.score += Board.level;
+
+			Board.numberOfApplesLeft--;
+			if (Board.numberOfApplesLeft == 0) {
+				Board.nextLevel();
+			}
+
 			Board.setSpace(newHead.x, newHead.y, BOARD_SPACE_WORM);
 		}
 
@@ -147,8 +158,7 @@ Worm.advance = function() {
 }
 
 Worm.grow = function() {
-	Worm.length += 4;
-	Worm.numberOfApplesEaten++;
+	Worm.length += Board.level;
 }
 
 Board.setSpace = function(x, y, newValue) {
@@ -160,6 +170,9 @@ Board.getSpace = function(x, y) {
 }
 
 Board.initialize = function() {
+	Board.level = 0;
+	Board.numberOfApplesLeft = 0;
+
 	//set all spaces to empty!
 	for (var x = 0; x < Board.width; x++) {
 		for (var y = 0; y < Board.height; y++) {
@@ -170,8 +183,20 @@ Board.initialize = function() {
 	//set the initial worm head space
 	Board.setSpace(Worm.headX, Worm.headY, BOARD_SPACE_WORM);
 
-	//place the initial apples
-	for (var i = 0; i < NUMBER_OF_APPLES; i++) {
+	Board.nextLevel();
+}
+
+Board.nextLevel = function() {
+	var numberOfApplesToPlace = 1;
+
+	for (var i = 0; i < Board.level; i++) {
+		numberOfApplesToPlace *= APPLE_MULTIPLIER;
+	}
+
+	Board.level++;
+	Board.numberOfApplesLeft = numberOfApplesToPlace;
+
+	for (var i = 0; i < numberOfApplesToPlace; i++) {
 		Board.placeApple();
 	}
 }
@@ -300,6 +325,13 @@ Game.draw = function() {
 					context.fillRect(xInset + x * BOARD_SPACE_SIZE, yInset + y * BOARD_SPACE_SIZE, BOARD_SPACE_SIZE, BOARD_SPACE_SIZE);
 				}
 				else if (spaceContents == BOARD_SPACE_WORM) {
+
+					var space = { };
+					space.x = x;
+					space.y = y;
+					// var index = Worm.body.indexOf(space);
+					// console.log("index " + index);
+
 					context.fillStyle = "#0B0";
 					context.fillRect(xInset + x * BOARD_SPACE_SIZE, yInset + y * BOARD_SPACE_SIZE, BOARD_SPACE_SIZE, BOARD_SPACE_SIZE);
 				}
@@ -315,6 +347,15 @@ Game.draw = function() {
 		}
 	}
 
+	context.textAlign = "left";
+	context.fillStyle = "#aaa";
+
+	context.font = "20px Arial";
+	context.fillText("Score: " + Worm.score, 12, 24);
+
+	context.fillStyle = "#aaa";
+	context.fillText("Level: " + Board.level, 12, 48);
+
 	context.textAlign = "center";
 	context.fillStyle = "#ccc";
 
@@ -322,20 +363,10 @@ Game.draw = function() {
 		context.font = "200px Arial";
 		context.fillText("Game Over", gameWidth / 2, gameHeight / 2);
 		context.font = "88px Arial";
-
-		if (Worm.numberOfApplesEaten == 0) {
-			context.font = "60px Arial";
-			context.fillText("You didn't eat any apples, you silly goose!", gameWidth / 2, gameHeight / 2 + 110);
-		}
-		else if (Worm.numberOfApplesEaten == 1) {
-			context.fillText("You ate 1 apple.", gameWidth / 2, gameHeight / 2 + 110);
-		}
-		else {
-			context.fillText("You ate " + Worm.numberOfApplesEaten + " apples.", gameWidth / 2, gameHeight / 2 + 100);
-		}
+		context.fillText("Score: " + Worm.score, gameWidth / 2, gameHeight / 2 + 110);
 
 		context.font = "40px Arial";
-		context.fillText("Press spacebar to restart.", gameWidth / 2, gameHeight / 2 + 200);
+		context.fillText("Press spacebar to restart.", gameWidth / 2, gameHeight / 2 + 180);
 	}
 
 	if (Game.paused) {
@@ -395,4 +426,3 @@ Game.update = function() {
 
 //start the loop!
 Game._intervalId = setInterval(Game.run, 0);
-
